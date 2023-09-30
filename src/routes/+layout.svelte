@@ -1,6 +1,6 @@
 <script>
-	import './styles.css';
-	import '../app.css';
+	import '$routes/styles.css';
+	import '$src/app.css';
 </script>
 
 <div class="app">

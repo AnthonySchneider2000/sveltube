@@ -1,17 +1,12 @@
 <script lang="ts">
 	// @hmr:keep-all
-  interface Video {
-    id: string
-    title: string
-    description: string
-    channel: string
-  }
+  import type { Video } from '$types/types'
 
   import { PUBLIC_API_KEY } from '$env/static/public'
   const YT_API_URL =
     'https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=PLt1aiQigbF8GpwHfHDaDwFWrXq-sf5Kwk&maxResults=50&key=' +
     PUBLIC_API_KEY
-  let videos: any[] = []
+  let videos: Video[] = []
 
   // fetch until there is no next page token
   async function fetchVideos(url: string) {
