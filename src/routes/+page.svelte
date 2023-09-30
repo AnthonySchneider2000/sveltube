@@ -1,4 +1,11 @@
 <script lang="ts">
+  interface Video {
+    id: string
+    title: string
+    description: string
+    channel: string
+  }
+
   import { PUBLIC_API_KEY } from '$env/static/public'
   const YT_API_URL =
     'https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=PLt1aiQigbF8GpwHfHDaDwFWrXq-sf5Kwk&maxResults=50&key=' +
@@ -9,7 +16,15 @@
   async function fetchVideos(url: string) {
     const res = await fetch(url)
     const data = await res.json()
-    videos = videos.concat(data.items)
+    videos = videos.concat(
+      data.items.map((item: any) => ({
+        id: item.snippet.resourceId.videoId,
+        title: item.snippet.title,
+        description: item.snippet.description,
+        channel: item.snippet.videoOwnerChannelTitle,
+      })),
+    )
+
     if (data.nextPageToken) {
       await fetchVideos(url + '&pageToken=' + data.nextPageToken)
     }
@@ -26,11 +41,13 @@
 <!-- Render a div for each video in the videos array -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ms-32 my-4">
   {#each videos as video}
-    <div
-      class="hover:scale-125 hover:shadow-xl hover:bg-gray-400 p-4 transition
-      duration-150 ease-in-out truncate text-center rounded-md">
-      {video.snippet.title}
-    </div>
+  <a href={`https://www.youtube.com/watch?v=${video.id}`} target="_blank">
+	<div
+	  class="hover:scale-125 hover:shadow-xl hover:bg-gray-400 p-4 transition
+	  duration-150 ease-in-out truncate text-center rounded-md">
+	  {video.title}
+	</div>
+  </a>
   {/each}
 
 </div>
