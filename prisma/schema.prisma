@@ -1,0 +1,31 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// schema.prisma
+
+model Video {
+  id          Int    @id @default(autoincrement())
+  title       String
+  description String
+  channel     String
+  videoId     String
+  playlists   Playlist[]
+}
+
+model Playlist {
+  id          Int    @id @default(autoincrement())
+  title        String
+  videos      Video[]
+  parent      Playlist? @relation("PlaylistToChild", fields: [parentId], references: [id])
+  parentId    Int?
+  children    Playlist[] @relation("PlaylistToChild")
+}
