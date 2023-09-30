@@ -1,4 +1,5 @@
 <script lang="ts">
+	// @hmr:keep-all
   interface Video {
     id: string
     title: string
@@ -41,13 +42,13 @@
 <!-- Render a div for each video in the videos array -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ms-32 my-4">
   {#each videos as video}
-  <a href={`https://www.youtube.com/watch?v=${video.id}`} target="_blank">
-	<div
-	  class="hover:scale-125 hover:shadow-xl hover:bg-gray-400 p-4 transition
-	  duration-150 ease-in-out truncate text-center rounded-md">
-	  {video.title}
-	</div>
-  </a>
+    <a
+      href={`https://www.youtube.com/watch?v=${video.id}`}
+      target="_blank"
+      class="hover:scale-125 hover:shadow-xl hover:bg-gray-400 p-4 transition w-[85%]
+      duration-150 ease-in-out truncate text-center rounded-md">
+      {video.title}
+    </a>
   {/each}
 
 </div>
