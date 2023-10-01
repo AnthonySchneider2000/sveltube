@@ -28,7 +28,7 @@ export async function GET({ url }){
         // if the playlist is the one we're looking for
         videos.push({
           // add the video to the array
-          id: video.id,
+          id: video.videoId,
           title: video.title,
           description: video.description,
           channel: video.channel,
