@@ -4,47 +4,50 @@ import { YT_API_KEY } from "$env/static/private";
 import { json } from "@sveltejs/kit";
 
 const prismaClient = new PrismaClient();
-
-async function getVideos(urlPage: string, playlistId: string){
+async function getVideos(urlPage: string, playlistId: string) {
+  console.log("fetching videos from playlist " + playlistId);
   let videos: any[] = [];
-    const url =
+  const url =
     `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=` +
     playlistId +
     `&maxResults=50&key=` +
     YT_API_KEY +
     `&pageToken=` +
     urlPage;
-
+  console.log("getVideos", url);
   const res = await fetch(url);
   const data = await res.json();
   videos = data.items;
-  if(data.nextPageToken){
+  if (data.nextPageToken) {
     videos = videos.concat(await getVideos(data.nextPageToken, playlistId));
   }
   return videos;
 }
 
-async function getPlaylists(urlPage: string){
+async function getPlaylists(urlPage: string) {
   let playlists: any[] = [];
+  console.log("fetching playlists");
   const channelId = "UC3pqkREPYHTGan3DrGy363Q";
   const url =
-    `https://www.googleapis.com/youtube/v3/playlists?part=snippet&maxResults=50&channelId=` +
-    channelId +
+    `https://www.googleapis.com/youtube/v3/playlists?part=snippet&maxResults=50` +
     `&key=` +
     YT_API_KEY +
     `&pageToken=` +
-    urlPage;
+    urlPage +
+    `&channelId=` +
+    channelId;
 
   const res = await fetch(url);
   const data = await res.json();
   playlists = data.items;
-  if(data.nextPageToken){
+  console.log("next page token: ", data.nextPageToken);
+  if (data.nextPageToken) {
     playlists = playlists.concat(await getPlaylists(data.nextPageToken));
   }
   return playlists;
 }
 
-export async function GET (userId: string) {
+export async function GET(userId: string) {
   // fetch all playlists from youtube
   let playlists: any[] = [];
   playlists = await getPlaylists("");
@@ -62,30 +65,21 @@ export async function GET (userId: string) {
         playlistId: playlistId,
       },
     });
-    if (playlistExists !== 0) {
-      response+="Playlist " + title + " already exists in the database.\n";
-      continue; // if the playlist exists, skip it
+    if (playlistExists === 0) {
+      // if the playlist doesn't exist, add it to the db
+      await prismaClient.playlist.create({
+        data: {
+          playlistId: playlistId,
+          title: title,
+        },
+      });
+      response += "Playlist " + title + " added to the database.\n";
     }
-    // if the playlist doesn't exist, add it to the db
-    await prismaClient.playlist.create({
-      data: {
-        playlistId: playlistId,
-        title: title,
-      },
-    });
-    response+="Playlist " + title + " added to the database.\n";
-    
 
-    let videos: any[] = [];
-
-    videos = await getVideos("", playlistId);
+    const videos = await getVideos("", playlistId);
 
     console.log(videos.length + " videos found.");
-    // console.log(videos);
     for (const video of videos) {
-      // console.log("video: " + video);
-      // console.log(video.snippet);
-      // console.log(video.snippet.resourceId);
       const videoId = video.snippet.resourceId.videoId;
       const videoTitle = video.snippet.title;
 
@@ -115,7 +109,7 @@ export async function GET (userId: string) {
             },
           },
         });
-        response+="    Video " + videoTitle + " added to the database.";
+        response += "    Video " + videoTitle + " added to the database.";
       } else {
         //if the video exists, check if it's already in the playlist
         const playlistExists = videoInstance.playlists.find(
@@ -123,7 +117,8 @@ export async function GET (userId: string) {
         );
 
         if (playlistExists !== undefined) {
-          response+="    Video " + videoTitle + " already exists in the playlist.";
+          response +=
+            "    Video " + videoTitle + " already exists in the playlist.";
           continue; // if the video is already in the playlist, skip it
         } else {
           // if the video is not in the playlist, add it to the playlist
@@ -152,7 +147,7 @@ export async function GET (userId: string) {
               },
             },
           });
-          response+="    Video " + videoTitle + " added to the playlist.";
+          response += "    Video " + videoTitle + " added to the playlist.";
         }
       } // end of else: videoInstance === null
     } // end of for loop: videos
@@ -162,4 +157,4 @@ export async function GET (userId: string) {
   console.log(response);
   // return a json response
   return json(response);
-};
+}
