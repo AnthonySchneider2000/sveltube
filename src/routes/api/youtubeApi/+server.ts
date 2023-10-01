@@ -1,34 +1,57 @@
 // src/routes/api/youtubeApi.ts
 import { PrismaClient } from "@prisma/client";
 import { YT_API_KEY } from "$env/static/private";
-import type { Playlist, Video } from "$src/types/types";
+import { json } from "@sveltejs/kit";
 
 const prismaClient = new PrismaClient();
 
-const getPlaylistData = async (playlistId: string) => {
-  const url =
-    `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=` +
+async function getVideos(urlPage: string, playlistId: string){
+  let videos: any[] = [];
+    const url =
+    `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=` +
     playlistId +
-    `&key=` +
-    YT_API_KEY;
+    `&maxResults=50&key=` +
+    YT_API_KEY +
+    `&pageToken=` +
+    urlPage;
+
   const res = await fetch(url);
   const data = await res.json();
-  return data;
-};
+  videos = data.items;
+  if(data.nextPageToken){
+    videos = videos.concat(await getVideos(data.nextPageToken, playlistId));
+  }
+  return videos;
+}
 
-export const getPlaylistList = async (userId: string) => {
+async function getPlaylists(urlPage: string){
+  let playlists: any[] = [];
   const channelId = "UC3pqkREPYHTGan3DrGy363Q";
   const url =
-    `https://www.googleapis.com/youtube/v3/playlists?part=snippet&channelId=` +
+    `https://www.googleapis.com/youtube/v3/playlists?part=snippet&maxResults=50&channelId=` +
     channelId +
     `&key=` +
-    YT_API_KEY;
+    YT_API_KEY +
+    `&pageToken=` +
+    urlPage;
 
   const res = await fetch(url);
   const data = await res.json();
-  const playlists = data.items;
+  playlists = data.items;
+  if(data.nextPageToken){
+    playlists = playlists.concat(await getPlaylists(data.nextPageToken));
+  }
+  return playlists;
+}
 
-  let response: string[] = [];
+export async function GET (userId: string) {
+  // fetch all playlists from youtube
+  let playlists: any[] = [];
+  playlists = await getPlaylists("");
+
+  console.log(playlists.length + " playlists found.");
+
+  let response: string = "";
 
   // check if playlist exists in db
   for (const playlist of playlists) {
@@ -40,7 +63,7 @@ export const getPlaylistList = async (userId: string) => {
       },
     });
     if (playlistExists !== 0) {
-      response.push("Playlist " + title + " already exists in the database.");
+      response+="Playlist " + title + " already exists in the database.\n";
       continue; // if the playlist exists, skip it
     }
     // if the playlist doesn't exist, add it to the db
@@ -50,12 +73,19 @@ export const getPlaylistList = async (userId: string) => {
         title: title,
       },
     });
-    response.push("Playlist " + title + " added to the database.");
+    response+="Playlist " + title + " added to the database.\n";
+    
 
-    const playlistData = await getPlaylistData(playlistId);
-    const videos = playlistData.items;
+    let videos: any[] = [];
 
+    videos = await getVideos("", playlistId);
+
+    console.log(videos.length + " videos found.");
+    // console.log(videos);
     for (const video of videos) {
+      // console.log("video: " + video);
+      // console.log(video.snippet);
+      // console.log(video.snippet.resourceId);
       const videoId = video.snippet.resourceId.videoId;
       const videoTitle = video.snippet.title;
 
@@ -78,9 +108,14 @@ export const getPlaylistList = async (userId: string) => {
             title: videoTitle,
             description: videoDescription,
             channel: videoChannel,
+            playlists: {
+              connect: {
+                playlistId: playlistId,
+              },
+            },
           },
         });
-        response.push("    Video " + videoTitle + " added to the database.");
+        response+="    Video " + videoTitle + " added to the database.";
       } else {
         //if the video exists, check if it's already in the playlist
         const playlistExists = videoInstance.playlists.find(
@@ -88,9 +123,7 @@ export const getPlaylistList = async (userId: string) => {
         );
 
         if (playlistExists !== undefined) {
-          response.push(
-            "    Video " + videoTitle + " already exists in the playlist."
-          );
+          response+="    Video " + videoTitle + " already exists in the playlist.";
           continue; // if the video is already in the playlist, skip it
         } else {
           // if the video is not in the playlist, add it to the playlist
@@ -119,18 +152,14 @@ export const getPlaylistList = async (userId: string) => {
               },
             },
           });
-          response.push("    Video " + videoTitle + " added to the playlist.");
+          response+="    Video " + videoTitle + " added to the playlist.";
         }
       } // end of else: videoInstance === null
     } // end of for loop: videos
   } // end of for loop: playlists
 
   await prismaClient.$disconnect(); // disconnect from the db
-
+  console.log(response);
   // return a json response
-  return {
-    body: {
-      message: response,
-    },
-  };
+  return json(response);
 };
