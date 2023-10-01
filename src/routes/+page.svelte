@@ -13,8 +13,7 @@
 
   async function fetchVideos(playListId: string) {
     const res = await fetch(`/api/fetchVideos?playlistId=${playListId}`)
-    const videos: Video[] = await res.json()
-    console.log("videos",videos)
+    videos = await res.json()
     return videos
   }
 
@@ -66,6 +65,10 @@
   {/each}
 </div>
 
+<!-- divider -->
+<hr class="my-4" />
+
+
 <!-- Render a div for each video in the videos array -->
 {#if videos.length > 0}
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ms-32 my-4">
@@ -83,4 +86,3 @@
 {:else}
   <p class="text-center">No videos to display</p>
 {/if}
-```
