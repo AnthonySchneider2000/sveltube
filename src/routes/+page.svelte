@@ -53,7 +53,7 @@
   {#each playlists as playlist}
     <button
       class="hover:scale-125 hover:shadow-xl hover:bg-gray-400 p-4 transition
-      w-[85%] duration-150 ease-in-out truncate text-center rounded-md"
+      w-[85%] duration-150 ease-in-out truncate text-center text-lg font-semibold rounded-md"
       on:click={() => selectPlaylist(playlist.playlistId)}
       on:keydown={(e) => {
         if (e.key === 'Enter') {
