@@ -39,7 +39,6 @@ export async function GET({ url }){
     }
   }
   console.log(videos.length + " videos found.");
-  console.log(videos);
-  prismaClient.$disconnect();
+  await prismaClient.$disconnect();
   return json(videos);
 };

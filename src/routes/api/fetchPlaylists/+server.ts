@@ -25,7 +25,7 @@ export async function GET(){
     };
   });
 
-  prismaClient.$disconnect();
+  await prismaClient.$disconnect();
 
   return json(playlists);
 };
