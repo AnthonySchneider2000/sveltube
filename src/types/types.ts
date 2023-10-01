@@ -9,6 +9,7 @@ export interface Video {
 
 export interface Playlist {
     id: string
+    playlistId: string
     title: string
     videos: Video[]
     parent: Playlist | null
