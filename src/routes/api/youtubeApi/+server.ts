@@ -48,6 +48,9 @@ async function getPlaylists(urlPage: string) {
 }
 
 export async function GET(userId: string) {
+
+  
+
   // fetch all playlists from youtube
   let playlists: any[] = [];
   playlists = await getPlaylists("");
@@ -59,7 +62,7 @@ export async function GET(userId: string) {
   // check if playlist exists in db
   for (const playlist of playlists) {
     const playlistId = playlist.id;
-    const title = playlist.snippet.title;
+    const title: string = playlist.snippet.title;
     const playlistExists = await prismaClient.playlist.count({
       where: {
         playlistId: playlistId,
@@ -74,6 +77,12 @@ export async function GET(userId: string) {
         },
       });
       response += "Playlist " + title + " added to the database.\n";
+      await prismaClient.tag.create({
+        data: {
+          tag: title,
+        },
+      });
+      response += "Tag " + title + " added to the database.\n";
     }
 
     const videos = await getVideos("", playlistId);
@@ -107,6 +116,11 @@ export async function GET(userId: string) {
                 playlistId: playlistId,
               },
             },
+            tags: {
+              connect: {
+                tag: title,
+              },
+            },
           },
         });
         response += "    Video " + videoTitle + " added to the database.";
@@ -134,6 +148,19 @@ export async function GET(userId: string) {
               },
             },
           });
+          // add the tag to the video
+          await prismaClient.tag.update({
+            where: {
+              tag: title,
+            },
+            data: {
+              videos: {
+                connect: {
+                  videoId: videoId,
+                },
+              },
+            },
+          });
           // update the video with the new playlist
           await prismaClient.video.update({
             where: {
@@ -143,6 +170,11 @@ export async function GET(userId: string) {
               playlists: {
                 connect: {
                   playlistId: playlistId,
+                },
+              },
+              tags: {
+                connect: {
+                  tag: title,
                 },
               },
             },

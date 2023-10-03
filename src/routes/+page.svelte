@@ -1,6 +1,6 @@
 <script lang="ts">
   // @hmr:keep-all
-  import type { Video, Playlist } from '$types/types'
+  import type { Video, Playlist, Tag } from '$types/types'
   import { onMount } from 'svelte'
   let videos: Video[] = []
   let selectedPlaylist: string = ''
@@ -13,8 +13,15 @@
 
   async function fetchVideos(playListId: string) {
     const res = await fetch(`/api/fetchVideos?playlistId=${playListId}`)
+
     videos = await res.json()
+    console.log(videos)
     return videos
+  }
+
+  async function updateTags() {
+    console.log('updating tags')
+    const res = await fetch('/api/addTags')
   }
 
   function selectPlaylist(playlistId: string) {
@@ -29,6 +36,7 @@
 
   onMount(async () => {
     playlists = await fetchPlaylists()
+    // updateTags()
   })
 </script>
 

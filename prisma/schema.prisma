@@ -18,14 +18,21 @@ model Video {
   title       String
   description String
   channel     String
-  playlists   Playlist[]
+  playlists   Playlist[] @relation("VideoToPlaylist")
+  tags        Tag[]      @relation("VideoToTags")
+}
+
+model Tag {
+  id     Int     @id @default(autoincrement())
+  tag    String  @unique
+  videos Video[] @relation("VideoToTags")
 }
 
 model Playlist {
   id         Int        @id @default(autoincrement())
   playlistId String     @unique
   title      String
-  videos     Video[]
+  videos     Video[]   @relation("VideoToPlaylist")
   parent     Playlist?  @relation("PlaylistToChild", fields: [parentId], references: [id])
   parentId   Int?
   children   Playlist[] @relation("PlaylistToChild")
